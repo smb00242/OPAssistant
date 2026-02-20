@@ -1,2 +1,44 @@
-# OPAssistant
-OpenWrt Assistant App
+name: Build APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build web
+        run: npm run build
+
+      - name: Install Capacitor
+        run: |
+          npm install @capacitor/core @capacitor/cli
+          npx cap init opa com.opa.app || true
+          npx cap add android || true
+
+      - name: Copy files
+        run: npx cap copy
+
+      - name: Build APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: opa-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
